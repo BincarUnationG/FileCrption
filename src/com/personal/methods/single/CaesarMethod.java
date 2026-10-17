@@ -30,10 +30,19 @@ public class CaesarMethod implements CryptoMethod {
     }
 
     private void transform(File in, File out, int shift) throws Exception {
-        byte[] data = java.nio.file.Files.readAllBytes(in.toPath());
-        for (int i = 0; i < data.length; i++) {
-            data[i] += shift;
+        int modShift = shift % 256;
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(in));
+             BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(out))) {
+            byte[] buf = new byte[4096];
+            int len;
+            while ((len = bis.read(buf)) != -1) {
+                for (int i = 0; i < len; i++) {
+                    int val = buf[i] & 0xFF;
+                    val = (val + modShift + 256) % 256;
+                    buf[i] = (byte) val;
+                }
+                bos.write(buf, 0, len);
+            }
         }
-        java.nio.file.Files.write(out.toPath(), data);
     }
 }

@@ -11,6 +11,7 @@ import java.awt.*;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class App extends JFrame {
     private final DefaultListModel<File> fileModel = new DefaultListModel<>();
     private final JList<File> fileList = new JList<>(fileModel);
     private final JCheckBox deleteOriginal = new JCheckBox("完成后删除原文件");
+    private File lastDir;   // 记住上次选择的文件夹/文件目录
 
     // ===== 操作按钮 =====
     private final JButton encryptBtn = new JButton("加密");
@@ -272,18 +274,29 @@ public class App extends JFrame {
 
     private void chooseFiles() {
         JFileChooser fc = new JFileChooser();
+        rememberLastDir(fc);
         fc.setMultiSelectionEnabled(true);
-        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION)
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            lastDir = fc.getCurrentDirectory();
             for (File f : fc.getSelectedFiles()) addFile(f);
+        }
     }
 
     private void chooseFolder() {
         JFileChooser fc = new JFileChooser();
+        rememberLastDir(fc);
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            lastDir = fc.getSelectedFile();
             File[] files = fc.getSelectedFile().listFiles(File::isFile);
             if (files != null) for (File f : files) addFile(f);
         }
+    }
+
+    /** 让文件选择框从上次选择的位置打开 */
+    private void rememberLastDir(JFileChooser fc) {
+        if (lastDir != null && lastDir.isDirectory())
+            fc.setCurrentDirectory(lastDir);
     }
 
     private void addFile(File f) {
@@ -331,14 +344,31 @@ public class App extends JFrame {
         if (m.needsPrivateKey() && ctx.privateKeyFile == null)
         { JOptionPane.showMessageDialog(this, "请选择私钥文件"); return; }
 
+        List<File> selected = fileList.getSelectedValuesList();
+        if (selected.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "请先选中要处理的文件");
+            return;
+        }
+
+        // 覆盖确认：输出文件已存在时逐条询问，拒绝覆盖的跳过
         List<File> files = new ArrayList<>();
-        for (int i = 0; i < fileModel.size(); i++) files.add(fileModel.get(i));
+        for (File f : selected) {
+            File out = opOutput(f, m, op);
+            if (out != null && out.exists() && !confirmOverwrite(out)) continue;
+            files.add(f);
+        }
+        if (files.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "没有可处理的文件");
+            return;
+        }
         boolean del = deleteOriginal.isSelected();
 
         setBusy(true);
         progressBar.setValue(0);
         statusLabel.setText("处理中...");
 
+        // 收集本次操作生成的输出文件，完成后自动加入列表
+        final List<File> generated = Collections.synchronizedList(new ArrayList<>());
         SwingWorker<int[], String> worker = new SwingWorker<>() {
             @Override
             protected int[] doInBackground() {
@@ -350,6 +380,7 @@ public class App extends JFrame {
                             case ENCRYPT: {
                                 File out = new File(f.getAbsolutePath() + m.getEncryptedSuffix());
                                 m.encrypt(f, out, ctx);
+                                generated.add(out);
                                 if (del && !out.getCanonicalPath().equals(f.getCanonicalPath()))
                                     Files.deleteIfExists(f.toPath());
                                 break;
@@ -357,16 +388,21 @@ public class App extends JFrame {
                             case DECRYPT: {
                                 File out = m.getDecryptTarget(f);
                                 m.decrypt(f, out, ctx);
+                                generated.add(out);
                                 if (del && !out.getCanonicalPath().equals(f.getCanonicalPath()))
                                     Files.deleteIfExists(f.toPath());
                                 break;
                             }
                             case HASH: {
-                                m.hash(f, m.getHashTarget(f), ctx);
+                                File out = m.getHashTarget(f);
+                                m.hash(f, out, ctx);
+                                generated.add(out);
                                 break;
                             }
                             case SIGN: {
-                                m.sign(f, m.getSignatureTarget(f), ctx);
+                                File out = m.getSignatureTarget(f);
+                                m.sign(f, out, ctx);
+                                generated.add(out);
                                 break;
                             }
                             case VERIFY: {
@@ -402,6 +438,10 @@ public class App extends JFrame {
                 } catch (Exception ex) {
                     statusLabel.setText("执行中断：" + ex.getMessage());
                 }
+                // 把生成的输出文件加入列表，方便直接进行下一步（如加密后直接解密）
+                synchronized (generated) {
+                    for (File g : generated) addFile(g);
+                }
             }
         };
 
@@ -410,6 +450,24 @@ public class App extends JFrame {
                 progressBar.setValue((Integer) evt.getNewValue());
         });
         worker.execute();
+    }
+
+    /** 计算本次操作对应的输出文件；VERIFY 无输出文件，返回 null */
+    private File opOutput(File f, CryptoMethod m, Operation op) {
+        switch (op) {
+            case ENCRYPT: return new File(f.getAbsolutePath() + m.getEncryptedSuffix());
+            case DECRYPT: return m.getDecryptTarget(f);
+            case HASH:    return m.getHashTarget(f);
+            case SIGN:    return m.getSignatureTarget(f);
+            default:      return null;
+        }
+    }
+
+    private boolean confirmOverwrite(File out) {
+        int r = JOptionPane.showConfirmDialog(this,
+                "输出文件已存在，是否覆盖？\n" + out.getAbsolutePath(),
+                "覆盖确认", JOptionPane.YES_NO_OPTION);
+        return r == JOptionPane.YES_OPTION;
     }
 
     private void setBusy(boolean busy) {
