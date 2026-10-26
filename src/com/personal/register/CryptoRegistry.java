@@ -19,7 +19,7 @@ public class CryptoRegistry {
         list.add(new com.personal.methods.classical.single.KeywordMethod());
         list.add(new com.personal.methods.classical.single.AffineMethod());
         // 古典-多表
-        // list.add(new com.personal.methods.classical.multi.VigenereMethod());
+        list.add(new com.personal.methods.classical.multi.VigenereMethod());
         // 对称
         // list.add(new com.personal.methods.symmetric.DesMethod());
         // list.add(new com.personal.methods.symmetric.AesMethod());
