@@ -15,9 +15,9 @@ public class CryptoRegistry {
 
         // ===== 按教材顺序逐步放开注释 =====
         // 古典-单表
-        list.add(new com.personal.methods.single.CaesarMethod());
-        list.add(new com.personal.methods.single.KeywordMethod());
-        list.add(new com.personal.methods.single.AffineMethod());
+        list.add(new com.personal.methods.classical.single.CaesarMethod());
+        list.add(new com.personal.methods.classical.single.KeywordMethod());
+        list.add(new com.personal.methods.classical.single.AffineMethod());
         // 古典-多表
         // list.add(new com.personal.methods.classical.multi.VigenereMethod());
         // 对称

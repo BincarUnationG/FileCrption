@@ -1,4 +1,4 @@
-package com.personal.methods.single;
+package com.personal.methods.classical.single;
 
 import com.personal.CryptoCategory;
 import com.personal.CryptoContext;
