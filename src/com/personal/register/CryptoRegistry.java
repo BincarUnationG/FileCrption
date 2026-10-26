@@ -9,17 +9,15 @@ import java.util.stream.Collectors;
 
 public class CryptoRegistry {
 
-    /**
-     * 在这里注册所有可用的算法。
-     */
     public static List<CryptoMethod> all() {
         List<CryptoMethod> list = new ArrayList<>();
 
 
         // ===== 按教材顺序逐步放开注释 =====
         // 古典-单表
-        // list.add(new com.personal.methods.classical.single.CaesarMethod());
-        // list.add(new com.personal.methods.classical.single.AffineMethod());
+        list.add(new com.personal.methods.single.CaesarMethod());
+        list.add(new com.personal.methods.single.KeywordMethod());
+        list.add(new com.personal.methods.single.AffineMethod());
         // 古典-多表
         // list.add(new com.personal.methods.classical.multi.VigenereMethod());
         // 对称
