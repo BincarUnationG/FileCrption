@@ -33,6 +33,7 @@ public class AffineMethod implements CryptoMethod {
         return gcd(a & 0xFF, 256) == 1;
     }
 
+    /** 辗转相除法 */
     private int gcd(int x, int y) {
         x = Math.abs(x);
         while (y != 0) {
@@ -68,8 +69,6 @@ public class AffineMethod implements CryptoMethod {
             return (av * v + bShift) & 0xFF;                     // E(x)=(ax+b)
         }
     }
-
-    // ============ 文件流 IO ============
 
     @Override
     public void encrypt(File in, File out, CryptoContext ctx) throws Exception {
