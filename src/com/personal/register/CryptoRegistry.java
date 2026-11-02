@@ -18,8 +18,11 @@ public class CryptoRegistry {
         list.add(new com.personal.methods.classical.single.CaesarMethod());
         list.add(new com.personal.methods.classical.single.KeywordMethod());
         list.add(new com.personal.methods.classical.single.AffineMethod());
+        list.add(new com.personal.methods.classical.single.PlayfairCharMethod());
         // 古典-多表
         list.add(new com.personal.methods.classical.multi.VigenereMethod());
+        // 古典-置换
+        list.add(new com.personal.methods.classical.transposition.ColumnarMethod());
         // 对称
         // list.add(new com.personal.methods.symmetric.DesMethod());
         // list.add(new com.personal.methods.symmetric.AesMethod());

@@ -12,7 +12,6 @@ import java.util.List;
 
 /**
  * Playfair 密码（字符级）：5×5 矩阵，I/J 合并，只替换 A-Z 字母。
- * 你自己填实现，我负责检查和讲思路。
  */
 public class PlayfairCharMethod implements CryptoMethod {
 
